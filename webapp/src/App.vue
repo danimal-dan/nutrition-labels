@@ -5,21 +5,7 @@
   </header>
   <section>
     <div class="flex flex-auto my-3">
-      <InputGroup>
-        <InputGroupAddon>
-          <i class="pi pi-search" />
-        </InputGroupAddon>
-        <InputText
-          icon="pi pi-search"
-          v-model="magicInputTextValue"
-          placeholder="Start typing a label name..."
-          @input="onMagicInputChange($event)"
-          @focus="onMagicInputChange($event)"
-        />
-      </InputGroup>
-      <OverlayPanel ref="magicInputOverlay">
-        Search results will go here as well as a [CREATE NEW] button
-      </OverlayPanel>
+      <MagicSearchBar />
     </div>
     <DataView :value="labels" data-key="uuid" :rows="5" paginator>
       <template #list="slotProps">
@@ -27,35 +13,29 @@
           <div v-for="(item, index) in slotProps.items" :key="item.uuid" class="col-12">
             <div class="flex" :class="{ 'border-top-1 surface-border': index !== 0 }">
               <div class="flex-auto flex-column p-4 gap-3 flex-grow">
-                <h3 class="mt-0">
-                  {{ item.name }}
-                  <Button icon="pi pi-pencil" style="width: 1.5rem; height: 1.5rem" rounded text />
-                </h3>
-                <template v-if="true">
-                  <!-- aka view mode -->
-                  <div class="flex flex-wrap gap-1">
-                    <Chip v-for="ingredient in item.ingredients" :label="ingredient.toString()" />
-                  </div>
-                </template>
-                <template v-else>
-                  <Chips v-model="item.ingredients" />
-                </template>
+                <LabelEditForm v-if="item.uuid === editModeLabelUuid" :label="item" />
+                <LabelView v-else :label="item" @edit="onBeginEdit(item)" />
               </div>
               <div class="flex flex-column align-items-center justify-content-center gap-3 m-3">
-                <template v-if="(selectedQuantityByUuid.get(item.uuid) ?? 0) > 0">
-                  <InputNumber
-                    class="quantity-input"
-                    show-buttons
-                    :model-value="selectedQuantityByUuid.get(item.uuid)"
-                    button-layout="vertical"
-                    :min="1"
-                    @update:model-value="(val: number) => onQuantityInput(item, val)"
-                  />
-                  <Button class="remove" text label="Remove" @click="onRemove(item)" />
+                <template v-if="item.uuid === editModeLabelUuid">
+                  <Button icon="pi pi-check" raised rounded @click="onEditComplete(item)" />
                 </template>
-                <template v-else
-                  ><Button icon="pi pi-plus" raised rounded @click="addLabel(item)"
-                /></template>
+                <template v-else>
+                  <template v-if="(selectedQuantityByUuid.get(item.uuid) ?? 0) > 0">
+                    <InputNumber
+                      class="quantity-input"
+                      show-buttons
+                      :model-value="selectedQuantityByUuid.get(item.uuid)"
+                      button-layout="vertical"
+                      :min="1"
+                      @update:model-value="(val: number) => onQuantityInput(item, val)"
+                    />
+                    <Button class="remove" text label="Remove" @click="onRemove(item)" />
+                  </template>
+                  <template v-else
+                    ><Button icon="pi pi-plus" raised rounded @click="addLabel(item)"
+                  /></template>
+                </template>
               </div>
             </div>
           </div>
@@ -69,35 +49,24 @@
 import { computed, ref } from 'vue'
 
 import Button from 'primevue/button'
-import Chip from 'primevue/chip'
-import Chips from 'primevue/chips'
 import DataView from 'primevue/dataview'
-import InputGroup from 'primevue/inputgroup'
-import InputGroupAddon from 'primevue/inputgroupaddon'
 import InputNumber from 'primevue/inputnumber'
-import InputText from 'primevue/inputtext'
-import OverlayPanel from 'primevue/overlaypanel'
+import LabelEditForm from '@/components/label/LabelEditForm.vue'
+import LabelView from '@/components/label/LabelView.vue'
+import MagicSearchBar from './components/label/magicSearch/MagicSearchBar.vue'
+
+import { useIngredients } from '@/composables/useIngredients'
 
 import BadgeDirective from 'primevue/badgedirective'
 
-import { CompositeIngredient, Label } from '@/model'
+import { Label } from '@/model'
 
 const vBadge = BadgeDirective
 
-const betterThanBoullionChicken = new CompositeIngredient('Better than Bouillion (Chicken)', [
-  'chicken',
-  'maltodextrin',
-  'salt',
-  'sugar',
-  'food starch',
-  'yeast extract',
-  'tumeric'
-])
-
-const magicInputOverlay = ref<OverlayPanel | null>(null)
+const { betterThanBoullionChicken } = useIngredients()
 
 const labels = ref([
-  new Label('Roasted Carrots', ['carrots', 'salt', 'pepper', 'avocado oil']),
+  new Label('Roasted Carrots', ['carrot', 'salt', 'pepper', 'avocado oil']),
   new Label('Hamburger', [
     'beef',
     'onion powder',
@@ -116,27 +85,23 @@ const labels = ref([
   ])
 ] as Label[])
 
-const magicInputTextValue = ref('')
-
-const onMagicInputChange = (event: Event) => {
-  if (!magicInputOverlay.value) {
-    console.warn('magic input overlay not yet mounted')
-    return
-  }
-
-  if (magicInputTextValue.value.length === 0) {
-    magicInputOverlay.value.hide()
-  } else {
-    magicInputOverlay.value.show(event)
-  }
-}
-
 type SelectedLabel = {
   quantity: number
   label: Label
 }
 
 const selectedLabels = ref([] as SelectedLabel[])
+
+const editModeLabelUuid = ref(undefined as undefined | string)
+
+const onBeginEdit = (label: Label) => {
+  editModeLabelUuid.value = label.uuid
+}
+
+const onEditComplete = (label: Label) => {
+  console.info('edit complete', label)
+  editModeLabelUuid.value = undefined
+}
 
 const addLabel = (label: Label) => {
   const currentIndex = selectedLabels.value.findIndex(
