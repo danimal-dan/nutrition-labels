@@ -1,52 +1,55 @@
 <template>
   <header class="flex m-3 align-items-center">
     <h1 class="flex-auto">Nutrition Labels</h1>
-    <i v-badge="totalQuantity" class="pi pi-tags p-overlay-badge" style="font-size: 2rem" />
+    <i class="pi pi-cog" style="font-size: 1.5rem" />
   </header>
   <section>
     <div class="flex flex-auto my-3">
-      <MagicSearchBar />
+      <MagicSearchBar @add="onAddLabel" @create="onCreateLabel" />
     </div>
-    <DataView :value="labels" data-key="uuid" :rows="5" paginator>
+    <DataView :value="selectedLabels" data-key="uuid">
       <template #list="slotProps">
         <div class="grid grid-nogutter">
           <div v-for="(item, index) in slotProps.items" :key="item.uuid" class="col-12">
             <div class="flex" :class="{ 'border-top-1 surface-border': index !== 0 }">
               <div class="flex-auto flex-column p-4 gap-3 flex-grow">
-                <LabelEditForm v-if="item.uuid === editModeLabelUuid" :label="item" />
-                <LabelView v-else :label="item" @edit="onBeginEdit(item)" />
+                <LabelEditForm v-if="item.label.uuid === editModeLabelUuid" :label="item.label" />
+                <LabelView v-else :label="item.label" @edit="onBeginEdit(item.label)" />
               </div>
               <div class="flex flex-column align-items-center justify-content-center gap-3 m-3">
-                <template v-if="item.uuid === editModeLabelUuid">
-                  <Button icon="pi pi-check" raised rounded @click="onEditComplete(item)" />
+                <template v-if="item.label.uuid === editModeLabelUuid">
+                  <Button icon="pi pi-check" raised rounded @click="onEditComplete(item.label)" />
                 </template>
                 <template v-else>
-                  <template v-if="(selectedQuantityByUuid.get(item.uuid) ?? 0) > 0">
-                    <InputNumber
-                      class="quantity-input"
-                      show-buttons
-                      :model-value="selectedQuantityByUuid.get(item.uuid)"
-                      button-layout="vertical"
-                      :min="1"
-                      @update:model-value="(val: number) => onQuantityInput(item, val)"
-                    />
-                    <Button class="remove" text label="Remove" @click="onRemove(item)" />
-                  </template>
-                  <template v-else
-                    ><Button icon="pi pi-plus" raised rounded @click="addLabel(item)"
-                  /></template>
+                  <InputNumber
+                    class="quantity-input"
+                    show-buttons
+                    v-model="item.quantity"
+                    button-layout="vertical"
+                    :min="1"
+                  />
+                  <Button class="remove" text label="Remove" @click="onRemove(item)" />
                 </template>
               </div>
             </div>
           </div>
         </div>
       </template>
+      <template #empty>
+        <p class="p-3 font-italic text-400">No labels selected</p>
+      </template>
     </DataView>
+    <div
+      v-if="selectedLabels.length"
+      class="action-bar surface-section border-top-2 surface-border fixed flex justify-content-center bottom-0 left-0 p-2 w-full"
+    >
+      <Button class="text-white" rounded><strong>Print Labels</strong></Button>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import Button from 'primevue/button'
 import DataView from 'primevue/dataview'
@@ -55,35 +58,7 @@ import LabelEditForm from '@/components/label/LabelEditForm.vue'
 import LabelView from '@/components/label/LabelView.vue'
 import MagicSearchBar from './components/label/magicSearch/MagicSearchBar.vue'
 
-import { useIngredients } from '@/composables/useIngredients'
-
-import BadgeDirective from 'primevue/badgedirective'
-
 import { Label } from '@/model'
-
-const vBadge = BadgeDirective
-
-const { betterThanBoullionChicken } = useIngredients()
-
-const labels = ref([
-  new Label('Roasted Carrots', ['carrot', 'salt', 'pepper', 'avocado oil']),
-  new Label('Hamburger', [
-    'beef',
-    'onion powder',
-    'garlic powder',
-    'salt',
-    'pepper',
-    'avocado oil'
-  ]),
-  new Label('Green Beans', [
-    'green beans',
-    betterThanBoullionChicken,
-    'salt',
-    'pepper',
-    'mushroom powder',
-    'apple cider vinegar'
-  ])
-] as Label[])
 
 type SelectedLabel = {
   quantity: number
@@ -103,12 +78,12 @@ const onEditComplete = (label: Label) => {
   editModeLabelUuid.value = undefined
 }
 
-const addLabel = (label: Label) => {
+const onAddLabel = (label: Label) => {
   const currentIndex = selectedLabels.value.findIndex(
     (selectedLabel) => selectedLabel.label.uuid === label.uuid
   )
   if (currentIndex === -1) {
-    selectedLabels.value.push({
+    selectedLabels.value.unshift({
       quantity: 1,
       label
     })
@@ -124,27 +99,9 @@ const addLabel = (label: Label) => {
   selectedLabels.value.splice(currentIndex, 1, updatedLabel)
 }
 
-const selectedQuantityByUuid = computed(() => {
-  return selectedLabels.value.reduce((map, label) => {
-    const currentValue = map.get(label.label.uuid) ?? 0
-
-    map.set(label.label.uuid, label.quantity + currentValue)
-
-    return map
-  }, new Map<string, number>())
-})
-
-const onQuantityInput = (label: Label, quantity: number) => {
-  const currentIndex = selectedLabels.value.findIndex(
-    (selectedLabel) => selectedLabel.label.uuid === label.uuid
-  )
-
-  const updatedLabel = {
-    quantity,
-    label
-  }
-
-  selectedLabels.value.splice(currentIndex, 1, updatedLabel)
+const onCreateLabel = (label: Label) => {
+  onAddLabel(label)
+  editModeLabelUuid.value = label.uuid
 }
 
 const onRemove = (label: Label) => {
@@ -154,15 +111,12 @@ const onRemove = (label: Label) => {
 
   selectedLabels.value.splice(currentIndex, 1)
 }
-
-const totalQuantity = computed(() =>
-  selectedLabels.value.reduce((sum, selectedLabel) => sum + selectedLabel.quantity, 0)
-)
 </script>
 
 <style>
 html {
   font-size: 16px;
+  padding-bottom: 70px;
 
   .quantity-input {
     font-size: 0.8rem;

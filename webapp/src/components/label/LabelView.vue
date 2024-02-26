@@ -12,6 +12,7 @@
     </h3>
     <div class="flex flex-wrap gap-1">
       <Chip
+        style="font-size: 0.8em"
         v-for="ingredient in label.ingredients"
         :key="ingredient.name"
         :label="ingredient.name"

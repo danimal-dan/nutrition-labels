@@ -19,7 +19,7 @@ export class Ingredient {
   name: string
 
   constructor(name: string) {
-    this.name = name
+    this.name = name.toLocaleLowerCase()
   }
 
   static of(val: string | Ingredient): Ingredient {
