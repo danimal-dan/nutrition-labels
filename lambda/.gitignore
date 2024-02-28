@@ -1,0 +1,14 @@
+# Bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Other common ignore patterns for Python projects
+*.egg-info/
+dist/
+build/
