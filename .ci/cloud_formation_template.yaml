@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  GeneratePdfLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: GeneratePdfHandler.py
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: nutrition-labels-app
+        S3Key: generate-pdf-lambda-function.zip
+      Runtime: python3.11
+      Timeout: 30
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+  NutritionLabelApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: NutritionLabelApi
+  NutritionLabelApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt NutritionLabelApi.RootResourceId
+      PathPart: api
+      RestApiId: !Ref NutritionLabelApi
+  NutritionLabelApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref NutritionLabelApiResource
+      RestApiId: !Ref NutritionLabelApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePdfLambdaFunction.Arn}/invocations
+  LambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GeneratePdfLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NutritionLabelApi}/*/*/*
+  SpaHostingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: nutrition-labels-app
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+  SpaDistributionOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: OAI for accessing S3 bucket content
+  SpaDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - labels.danimaldan.com
+        Origins:
+          - DomainName: !GetAtt SpaHostingBucket.DomainName
+            Id: SpaHostingBucketOrigin
+            OriginPath: /webapp
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${SpaDistributionOAI.CloudFrontOriginAccessIdentityId}
+          - DomainName: !GetAtt NutritionLabelApiResource.DomainName
+            Id: SpaApiReverseProxy
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: SpaHostingBucketOrigin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        CacheBehaviors:
+          - PathPattern: api/*
+            TargetOriginId: SpaApiReverseProxy
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - PATCH
+              - POST
+              - DELETE
+            ForwardedValues:
+              QueryString: true
+        ViewerCertificate:
+          AcmCertificateArn: arn:aws:acm:us-east-1:007159692352:certificate/7994172d-190b-4ac9-9445-8d9273081b85
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2019
+  SpaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SpaHostingBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${SpaDistributionOAI.CloudFrontOriginAccessIdentityId}
+            Action: s3:GetObject
+            Resource: !Sub arn:aws:s3:::${SpaHostingBucket}/webapp/*
+Outputs:
+  SpaBucketName:
+    Description: Bucket for SPA hosting
+    Value: !Ref SpaHostingBucket
+  CloudFrontDistribution:
+    Description: CloudFront Distribution for the SPA
+    Value: !GetAtt SpaDistribution.DomainName
