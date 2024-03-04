@@ -53,7 +53,7 @@ class Label:
         self.lastUsed = None
 
     def getIngredientList(self):
-        return [item for ingredient in self.ingredients for item in ingredient.getListing()]
+        return list(set([item for ingredient in self.ingredients for item in ingredient.getListing()]))
 
     
 class LabelQuantityPair:

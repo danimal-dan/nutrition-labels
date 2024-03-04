@@ -1,9 +1,10 @@
-import uuid
+import os
 import json
-from typing import List, Union, Optional
+from typing import List
 from datetime import datetime
 from Models import LabelQuantityPair
 from AveryLabels import AveryLabel
+from LabelDatabase import *
 from PdfGenerator import generate_pdf
 
 
@@ -36,13 +37,34 @@ def lambda_handler(event, context):
 
 # Example event for testing
 if __name__ == "__main__":
-    event = {
-        'body': json.dumps({
-            "template": 5160,
-            "labels": [
-                { "quantity": 1, "label": {"name": "Water", "ingredients": ["H2O"]}},
-                { "quantity": 5, "label": {"name": "Soup", "ingredients": ["Naadfkjdafaklj", "Chloridad", "Pear", "Baking Soda", "Chicken Broth", { "name": "Formula", "ingredients": ["Aadfadf", "Badsfdafaf"]}]}}
-            ]
-        })
-    }
-    print(lambda_handler(event, None))
+    # LAMBDA TEST
+    # event = {
+    #     'body': json.dumps({
+    #         "template": 5160,
+    #         "labels": [
+    #             { "quantity": 1, "label": {"name": "Water", "ingredients": ["H2O"]}},
+    #             { "quantity": 5, "label": {"name": "Soup", "ingredients": ["Naadfkjdafaklj", "Chloridad", "Pear", "Baking Soda", "Chicken Broth", { "name": "Formula", "ingredients": ["Aadfadf", "Badsfdafaf"]}]}}
+    #         ]
+    #     })
+    # }
+    # print(lambda_handler(event, None))
+
+    # TEST RUN
+    averyLabel = AveryLabel(5160)
+    labelsToPrint = [
+        EmptySpacerLabel(),
+        EmptySpacerLabel(),
+        EmptySpacerLabel(),
+        EmptySpacerLabel(),
+        EmptySpacerLabel(),
+        EmptySpacerLabel(),
+        Chicken(),
+        BlackEyePeas(),
+        Broccoli(),
+        Grits(),
+        DirtyRice()
+    ]
+    child_name = os.environ.get('NUTRITION_LABELS_CHILD_NAME')
+    print('child', child_name)
+    header = child_name + ' ' + datetime.now().strftime("%-m/%-d/%Y") if child_name else ''
+    generate_pdf(averyLabel, labelsToPrint, header)

@@ -27,7 +27,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 labelInfo = {
     # 2.6 x 1 address labels
-    5160: ( 3, 10, (187,  72), (11, 0), (14, 36)),
+    5160: ( 3, 10, (187,  72), (11, 0), (18, 46)),
     5161: ( 2, 10, (288,  72), (0, 0), (18, 36)),
     # 4 x 2 address labels
     5163: ( 2,  5, (288, 144), (0, 0), (18, 36)),

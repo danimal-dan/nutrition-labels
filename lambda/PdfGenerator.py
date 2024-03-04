@@ -4,28 +4,34 @@ from Models import Label
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
-HEADER_FONT = "Helvetica-Bold"
-HEADER_FONT_SIZE = 10
-LABEL_FONT = "Helvetica"
-LABEL_FONT_SIZE = 8
+LABEL_NAME_FONT = "Helvetica-Bold"
+LABEL_NAME_FONT_SIZE = 10
+INGREDIENT_FONT = "Helvetica"
+INGREDIENT_FONT_SIZE = 8
 PADDING = 3
 
-def render_function(canv: Canvas, width: int, height: int, label: Label):
-  print('position', width, height)
-  print(label.name, ', '.join([str(ingredient) for ingredient in label.ingredients]))
+def render_function(canv: Canvas, width: int, height: int, label: Label, headerLine: str = ''):
+  print('Label = ', headerLine, label.name, ' - ', ', '.join([str(ingredient) for ingredient in label.ingredients]))
 
   x = PADDING
   y = height - PADDING
 
   ## write header
-  canv.setFont(HEADER_FONT, HEADER_FONT_SIZE)
+  canv.setFont(INGREDIENT_FONT, INGREDIENT_FONT_SIZE)
+  if headerLine and (label.name or label.getIngredientList()):
+    canv.drawString(x, y, headerLine)
+    y -= LABEL_NAME_FONT_SIZE
+    y -= PADDING
+
+  ## write label name
+  canv.setFont(LABEL_NAME_FONT, LABEL_NAME_FONT_SIZE)
   canv.drawString(x, y, label.name)
 
-  y -= HEADER_FONT_SIZE
+  y -= LABEL_NAME_FONT_SIZE
   y -= PADDING
 
   ## write ingredients
-  canv.setFont(LABEL_FONT, LABEL_FONT_SIZE)
+  canv.setFont(INGREDIENT_FONT, INGREDIENT_FONT_SIZE)
   
   maxStringWidth = width - (PADDING * 2)
   lines = divideIngredientListIntoLines(label.getIngredientList(), canv, maxStringWidth)
@@ -35,7 +41,7 @@ def render_function(canv: Canvas, width: int, height: int, label: Label):
       warnings.warn("Label '" + label.name + "' ingredient list has exceeded allowed height" )
       break
     canv.drawString(x, y, line.strip())
-    y -= LABEL_FONT_SIZE + 1
+    y -= INGREDIENT_FONT_SIZE + 1
 
 
 def divideIngredientListIntoLines(ingredients: list[str], canv: Canvas,  maxWidth: int):
@@ -54,7 +60,10 @@ def divideIngredientListIntoLines(ingredients: list[str], canv: Canvas,  maxWidt
   return lines
 
 
-def generate_pdf(template: AveryLabel, labels: list[Label]):
+def generate_pdf(template: AveryLabel, labels: list[Label], headerLine: str = ''):
   template.open('test.pdf')
-  template.render(render_function, iter(labels))
+  if headerLine:
+    template.render(lambda *args, **kwargs: render_function(*args, headerLine, **kwargs), iter(labels), headerLine)
+  else:
+    template.render(render_function, iter(labels), headerLine)
   template.close()
