@@ -10,6 +10,10 @@ phases:
   pre_build:
     commands:
       - echo "Running tests (write some tests dummy)..."
+  build:
+    commands:
+      - echo "Building web app..."
+      - npm run build
 artifacts:
   files:
     - webapp/dist/**/*
