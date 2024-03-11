@@ -1,6 +1,8 @@
 #!/bin/bash
 
-CODEPIPELINE_STACK_NAME="nutrition-labels3"
+# CODEPIPELINE_STACK_NAME="nutrition-labels"
+# temp to generate a unique name
+CODEPIPELINE_STACK_NAME="nutrition-labels-$(date +%Y-%m-%d-%H-%M-%S)"
 
 if [ -z ${1} ]
 then
@@ -13,6 +15,6 @@ aws cloudformation create-stack \
         --capabilities CAPABILITY_IAM \
         --stack-name $CODEPIPELINE_STACK_NAME \
         --parameters ParameterKey=GitHubOAuthToken,ParameterValue=${1} \
-        --template-body file://$(dirname "$0")/cloud-formation-template.yaml \
+        --template-body file://$(dirname "$0")/001-cloud-formation-infra-and-codebuild.yaml \
         --region us-east-1 \
         --profile default

@@ -17,9 +17,21 @@ Parameters:
     AllowedPattern: '[A-Za-z0-9-]+'
   GitHubBranch:
     Type: String
-    Default: main
+    Default: cicd
     AllowedPattern: '[A-Za-z0-9-]+'
 Resources:
+  NutritionLabelsAppBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: nutrition-labels-app
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
   NutrionLabelsBuildAndDeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -64,6 +76,7 @@ Resources:
               - cloudwatch:*
               - s3:*
               - cloudformation:*
+              - logs:*
             Resource: '*'
             Effect: Allow
           - Action:
@@ -98,91 +111,6 @@ Resources:
       PolicyName: NutrionLabelsBuildAndDeployRolePolicy
       Roles:
         - !Ref NutrionLabelsBuildAndDeployRole
-  NutritionLabelsAppBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: nutrition-labels-app
-      Existing: true
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: error.html
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
-  WebAppDistributionOAI:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: OAI for accessing S3 bucket content
-  WebAppDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Aliases:
-          - labels.danimaldan.com
-        Origins:
-          - DomainName: !GetAtt NutritionLabelsAppBucket.DomainName
-            Id: NutritionLabelsAppBucketOrigin
-            OriginPath: /webapp
-            S3OriginConfig:
-              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${WebAppDistributionOAI.CloudFrontOriginAccessIdentityId}
-          - DomainName: !GetAtt NutritionLabelApiResource.DomainName
-            Id: WebAppApiReverseProxy
-            CustomOriginConfig:
-              OriginProtocolPolicy: https-only
-        Enabled: true
-        DefaultRootObject: index.html
-        DefaultCacheBehavior:
-          AllowedMethods:
-            - GET
-            - HEAD
-          TargetOriginId: NutritionLabelsAppBucketOrigin
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
-          ViewerProtocolPolicy: redirect-to-https
-        CacheBehaviors:
-          - PathPattern: api/*
-            TargetOriginId: WebAppApiReverseProxy
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-              - PUT
-              - PATCH
-              - POST
-              - DELETE
-            ForwardedValues:
-              QueryString: true
-        ViewerCertificate:
-          AcmCertificateArn: arn:aws:acm:us-east-1:007159692352:certificate/7994172d-190b-4ac9-9445-8d9273081b85
-          SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1.2_2019
-  WebAppBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref NutritionLabelsAppBucket
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !Sub arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${WebAppDistributionOAI.CloudFrontOriginAccessIdentityId}
-            Action: s3:GetObject
-            Resource: !Sub arn:aws:s3:::${NutritionLabelsAppBucket}/webapp/*
-  NutritionLabelApi:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Name: NutritionLabelApi
-  NutritionLabelApiResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt NutritionLabelApi.RootResourceId
-      PathPart: api
-      RestApiId: !Ref NutritionLabelApi
   PdfGeneratorLambdaCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -193,13 +121,10 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: LAMBDA_FUNCTION_NAME
-            Value: !GetAtt GeneratePdfLambdaFunction.FunctionName
       ServiceRole: !Ref NutrionLabelsBuildAndDeployRole
       Source:
         Type: CODEPIPELINE
-        BuildSpec: lambda.buildspec.yaml
+        BuildSpec: .ci/lambda.buildspec.yaml
       TimeoutInMinutes: 5
   WebAppCodeBuild:
     Type: AWS::CodeBuild::Project
@@ -214,7 +139,7 @@ Resources:
       ServiceRole: !Ref NutrionLabelsBuildAndDeployRole
       Source:
         Type: CODEPIPELINE
-        BuildSpec: webapp.buildspec.yaml
+        BuildSpec: .ci/webapp.buildspec.yaml
       TimeoutInMinutes: 5
   NutritionLabelsCodePipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -226,7 +151,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: SourceAction
+            - Name: Source
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
@@ -269,31 +194,29 @@ Resources:
               Configuration:
                 ProjectName: !Ref WebAppCodeBuild
               RunOrder: 1
-        - Name: Deploy
+        - Name: Deploy-to-S3
           Actions:
-            - Name: DeployPdfGeneratorLambda
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: 1
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                StackName: PdfGeneratorLambdaFunctionStack
-                TemplatePath: BuildOutput::pdf-generator-lambda-deployment.yaml
-                Capabilities: CAPABILITY_NAMED_IAM
-                RoleArn: !GetAtt NutrionLabelsBuildAndDeployRole.Arn
-              InputArtifacts:
-                - Name: LambdaBuildOutput
-              RunOrder: 1
-            - Name: DeployWebApp
+            - Name: DeployLambdaPdfGeneratorApp
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
                 Provider: S3
                 Version: 1
               Configuration:
-                BucketName: !GetAtt NutritionLabelsAppBucket.BucketName
+                BucketName: !Ref NutritionLabelsAppBucket
+                Extract: true
+                ObjectKey: generate-pdf-lambda-function.zip
+              InputArtifacts:
+                - Name: WebAppBuildOutput
+              RunOrder: 1
+            - Name: DeployNutritionLabelsWebApp
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: 1
+              Configuration:
+                BucketName: !Ref NutritionLabelsAppBucket
                 Extract: true
                 ObjectKey: webapp/
               InputArtifacts:
@@ -316,6 +239,3 @@ Outputs:
   WebAppBucketName:
     Description: Bucket for WebApp hosting
     Value: !Ref NutritionLabelsAppBucket
-  CloudFrontDistribution:
-    Description: CloudFront Distribution for the WebApp
-    Value: !GetAtt WebAppDistribution.DomainName

@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An example SAM template for deploying a Lambda function.
+
+Parameters:
+  LambdaS3Bucket:
+    Description: Name of the S3 bucket where the Lambda function code is stored
+    Type: String
+
+  LambdaS3Key:
+    Description: S3 key (file path) of the zipped Lambda function code
+    Type: String
+
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: NutritionLabelsPdfGenerator
+      Handler: GeneratePdfHandler.py
+      Role: !GetAtt LambdaExecutionRole.Arn
+      CodeUri:
+        Bucket: !Ref LambdaS3Bucket
+        Key: !Ref LambdaS3Key
+      Runtime: nodejs14.x
+      Events:
+        MyApi:
+          Type: Api
+          Properties:
+            Path: /myfunction
+            Method: get
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
