@@ -12,8 +12,8 @@ phases:
       - echo "Running tests (write some tests dummy)..."
 artifacts:
   files:
-    - dist/**/*
-  base-directory: dist
+    - webapp/dist/**/*
+  base-directory: webapp/dist
 cache:
   paths:
-    - 'node_modules/**/*'
+    - 'webapp/node_modules/**/*'
