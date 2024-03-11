@@ -5,14 +5,14 @@ phases:
       python: 3.11
     commands:
       - echo "Installing dependencies..."
-      - pip install -r requirements.txt -t build/
+      - cd lambda && pip install -r requirements.txt -t build/
   pre_build:
     commands:
       - echo "Running tests (write some tests dummy)..."
   build:
     commands:
       - echo "Packaging Lambda function..."
-      - zip -r generate-pdf-lambda-function.zip ./build
+      - cd lambda && zip -r generate-pdf-lambda-function.zip ./build
 artifacts:
   files:
-    - generate-pdf-lambda-function.zip
+    - lambda/generate-pdf-lambda-function.zip
