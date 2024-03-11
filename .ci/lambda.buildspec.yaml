@@ -16,4 +16,5 @@ phases:
       - zip -r generate-pdf-lambda-function.zip ./build
 artifacts:
   files:
-    - lambda/generate-pdf-lambda-function.zip
+    - generate-pdf-lambda-function.zip
+  base-directory: lambda
