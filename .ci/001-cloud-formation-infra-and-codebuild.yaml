@@ -207,7 +207,7 @@ Resources:
                 Extract: true
                 ObjectKey: generate-pdf-lambda-function.zip
               InputArtifacts:
-                - Name: WebAppBuildOutput
+                - Name: LambdaBuildOutput
               RunOrder: 1
             - Name: DeployNutritionLabelsWebApp
               ActionTypeId:

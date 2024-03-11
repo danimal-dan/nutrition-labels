@@ -16,8 +16,8 @@ phases:
       - npm run build
 artifacts:
   files:
-    - '**/*'
-  base-directory: webapp/dist
+    - '/**/*'
+  base-directory: webapp/dist/
 cache:
   paths:
     - 'webapp/node_modules/**/*'
