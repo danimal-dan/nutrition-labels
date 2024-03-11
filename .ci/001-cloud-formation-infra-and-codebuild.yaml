@@ -32,6 +32,10 @@ Resources:
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
+  NutritionLabelsBuildBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: nutrition-labels-build
   NutrionLabelsBuildAndDeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -147,7 +151,7 @@ Resources:
       RoleArn: !GetAtt NutrionLabelsBuildAndDeployRole.Arn
       ArtifactStore:
         Type: S3
-        Location: !Ref NutritionLabelsAppBucket
+        Location: !Ref NutritionLabelsBuildBucket
       Stages:
         - Name: Source
           Actions:
