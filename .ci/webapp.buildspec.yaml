@@ -5,14 +5,15 @@ phases:
       nodejs: 20
     commands:
       - echo "Installing dependencies..."
-      - cd webapp && npm install --prefer-offline
+      - cd webapp
+      - npm install --prefer-offline
   pre_build:
     commands:
       - echo "Running tests (write some tests dummy)..."
 artifacts:
   files:
-    - webapp/dist/**/*
-  base-directory: webapp/dist
+    - dist/**/*
+  base-directory: dist
 cache:
   paths:
     - 'node_modules/**/*'
