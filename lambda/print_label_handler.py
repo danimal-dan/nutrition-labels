@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # LAMBDA TEST
     # event = {
     #     'body': json.dumps({
-    #         "template": 5160,
+    #         "template": 4224,
     #         "labels": [
     #             { "quantity": 1, "label": {"name": "Water", "ingredients": ["H2O"]}},
     #             { "quantity": 5, "label": {"name": "Soup", "ingredients": ["Naadfkjdafaklj", "Chloridad", "Pear", "Baking Soda", "Chicken Broth", { "name": "Formula", "ingredients": ["Aadfadf", "Badsfdafaf"]}]}}
@@ -50,21 +50,28 @@ if __name__ == "__main__":
     # print(lambda_handler(event, None))
 
     # TEST RUN
-    averyLabel = AveryLabel(5160)
+    averyLabel = AveryLabel(4224)
     labelsToPrint = [
-        EmptySpacerLabel(),
-        EmptySpacerLabel(),
-        EmptySpacerLabel(),
-        EmptySpacerLabel(),
-        EmptySpacerLabel(),
-        EmptySpacerLabel(),
-        Chicken(),
-        BlackEyePeas(),
-        Broccoli(),
-        Grits(),
-        DirtyRice()
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler(),
+        FullSampler()
     ]
     child_name = os.environ.get('NUTRITION_LABELS_CHILD_NAME')
     print('child', child_name)
-    header = child_name + ' ' + datetime.now().strftime("%-m/%-d/%Y") if child_name else ''
+    header = child_name + ' - ' + datetime.now().strftime("%-m/%-d/%Y") if child_name else ''
     generate_pdf(averyLabel, labelsToPrint, header)

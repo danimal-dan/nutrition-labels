@@ -5,15 +5,21 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.pdfbase.pdfmetrics import stringWidth
 
 LABEL_NAME_FONT = "Helvetica-Bold"
-LABEL_NAME_FONT_SIZE = 10
+LABEL_NAME_FONT_SIZE = 13
 INGREDIENT_FONT = "Helvetica"
-INGREDIENT_FONT_SIZE = 8
+INGREDIENT_FONT_SIZE = 10
 PADDING = 3
 
-def render_function(canv: Canvas, width: int, height: int, label: Label, headerLine: str = ''):
+def render_function(canv: Canvas, width: int, height: int, label: Label, headerLine: str = '', debugTemplateEdges: bool = False):
   print('Label = ', headerLine, label.name, ' - ', ', '.join([str(ingredient) for ingredient in label.ingredients]))
 
-  x = PADDING
+  if debugTemplateEdges:
+    canv.drawString(0, height, '+')
+    canv.drawString(width, height, '+')
+    canv.drawString(0, 0, '+')
+    canv.drawString(width, 0, '+')
+
+  x = PADDING * 2
   y = height - PADDING
 
   ## write header
