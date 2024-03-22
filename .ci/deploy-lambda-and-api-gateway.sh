@@ -2,7 +2,7 @@
 
 # CODEPIPELINE_STACK_NAME="nutrition-labels"
 # temp to generate a unique name
-CODEPIPELINE_STACK_NAME="nutrition-labels-labmda-and-gateway-$(date +%Y-%m-%d-%H-%M-%S)"
+CODEPIPELINE_STACK_NAME="nutrition-labels-lambda-and-gateway-$(date +%Y-%m-%d-%H-%M-%S)"
 
 domainName=""
 hostedZoneId=""
