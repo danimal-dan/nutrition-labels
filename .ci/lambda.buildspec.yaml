@@ -13,6 +13,7 @@ phases:
   build:
     commands:
       - echo "Packaging Lambda function..."
+      - cp ./*.py ./build
       - zip -r generate-pdf-lambda-function.zip ./build
 artifacts:
   files:

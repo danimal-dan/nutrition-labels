@@ -213,7 +213,6 @@ Resources:
               Configuration:
                 BucketName: !Ref NutritionLabelsLambdaBucket
                 Extract: true
-                # ObjectKey: lambda
               InputArtifacts:
                 - Name: LambdaBuildOutput
               RunOrder: 1
@@ -226,7 +225,6 @@ Resources:
               Configuration:
                 BucketName: !Ref NutritionLabelsWebAppBucket
                 Extract: true
-                # ObjectKey: webapp
               InputArtifacts:
                 - Name: WebAppBuildOutput
               RunOrder: 1

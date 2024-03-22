@@ -116,7 +116,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: ANY
         Type: AWS
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/${!method.request.path.proxy}'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/'
         Credentials: !GetAtt ApiGatewayExecutionRole.Arn
   # WebAppBucketPolicy:
   #   Type: AWS::S3::BucketPolicy
