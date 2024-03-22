@@ -20,10 +20,10 @@ Parameters:
     Default: cicd
     AllowedPattern: '[A-Za-z0-9-]+'
 Resources:
-  NutritionLabelsAppBucket:
+  NutritionLabelsWebAppBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: nutrition-labels-app
+      BucketName: nutrition-labels-webapp
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
@@ -32,6 +32,10 @@ Resources:
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
+  NutritionLabelsLambdaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: nutrition-labels-lambda
   NutritionLabelsBuildBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -207,9 +211,9 @@ Resources:
                 Provider: S3
                 Version: 1
               Configuration:
-                BucketName: !Ref NutritionLabelsAppBucket
+                BucketName: !Ref NutritionLabelsLambdaBucket
                 Extract: true
-                ObjectKey: lambda
+                # ObjectKey: lambda
               InputArtifacts:
                 - Name: LambdaBuildOutput
               RunOrder: 1
@@ -220,9 +224,9 @@ Resources:
                 Provider: S3
                 Version: 1
               Configuration:
-                BucketName: !Ref NutritionLabelsAppBucket
+                BucketName: !Ref NutritionLabelsWebAppBucket
                 Extract: true
-                ObjectKey: webapp
+                # ObjectKey: webapp
               InputArtifacts:
                 - Name: WebAppBuildOutput
               RunOrder: 1
@@ -242,4 +246,20 @@ Resources:
 Outputs:
   WebAppBucketName:
     Description: Bucket for WebApp hosting
-    Value: !Ref NutritionLabelsAppBucket
+    Value: !Ref NutritionLabelsWebAppBucket
+  LambdaBucketName:
+    Description: Bucket for Lambda Function
+    Value: !Ref NutritionLabelsLambdaBucket
+  StackName:
+    Description: Name of exported stack
+    Value: !Ref AWS::StackName
+  NutritionLabelsWebAppBucketOutput:
+    Description: 'Nutrition Labels App Bucket'
+    Value: !Ref NutritionLabelsWebAppBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-NutritionLabelsWebAppBucket'
+  NutritionLabelsLambdaBucketOutput:
+    Description: 'Nutrition Labels App Bucket'
+    Value: !Ref NutritionLabelsWebAppBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-NutritionLabelsLambdaBucket'

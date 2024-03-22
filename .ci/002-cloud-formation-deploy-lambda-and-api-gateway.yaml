@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: PDF Generator Lambda Function and API Gateway Method
+Parameters:
+  CustomDomainName:
+    Type: String
+    AllowedPattern: '[A-Za-z0-9_.]*'
+  WebAppBucketName:
+    Type: String
+    AllowedPattern: '[A-Za-z0-9-]*'
+  WebAppBucketEndpoint:
+    Type: String
+    AllowedPattern: '(https?:\/\/)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.amazonaws.com'
+  SslCertificateArn:
+    Type: String
+    AllowedPattern: '^arn:aws:acm:\w+(?:-\w+)+:\d{12}:certificate\/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$'
+  HostedZoneId:
+    Type: String
+    AllowedPattern: '[A-Z0-9]*'
+Resources:
+  GeneratePdfLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: GeneratePdfHandler.py
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.11
+      Timeout: 120
+      Code:
+        S3Bucket: nutrition-labels-lambda
+        S3Key: generate-pdf-lambda-function.zip
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+  ApiGatewayExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: 'ApiGatewayS3ProxyPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub 'arn:aws:s3:::${WebAppBucketName}/*'
+  NutritionLabelApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: NutritionLabelApi
+  NutritionLabelLambdaApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt NutritionLabelApi.RootResourceId
+      PathPart: api
+      RestApiId: !Ref NutritionLabelApi
+  NutritionLabelWebAppProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt NutritionLabelApi.RootResourceId
+      PathPart: '{proxy+}'
+      RestApiId: !Ref NutritionLabelApi
+  NutritionLabelLambdaApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref NutritionLabelLambdaApiResource
+      RestApiId: !Ref NutritionLabelApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePdfLambdaFunction.Arn}/invocations
+  LambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GeneratePdfLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${NutritionLabelApi}/*/*/*
+  NutritionLabelWebAppApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: ANY
+      ResourceId: !Ref NutritionLabelWebAppProxyResource
+      RestApiId: !Ref NutritionLabelApi
+      Integration:
+        IntegrationHttpMethod: ANY
+        Type: AWS
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/${!method.request.path.proxy}'
+        Credentials: !GetAtt ApiGatewayExecutionRole.Arn
+  # WebAppBucketPolicy:
+  #   Type: AWS::S3::BucketPolicy
+  #   Properties:
+  #     Bucket: !Ref WebAppBucketName
+  #     PolicyDocument:
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             CanonicalUser: !GetAtt WebAppDistributionOAI.S3CanonicalUserId
+  #           Action: s3:GetObject
+  #           Resource: !Sub arn:aws:s3:::${WebAppBucketName}/*
+  NutritionLabelApiCustomDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref CustomDomainName
+      CertificateArn: !Ref SslCertificateArn
+      EndpointConfiguration:
+        Types:
+          - 'EDGE'
+  NutritionLabelApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref NutritionLabelApiCustomDomainName
+      RestApiId: !Ref NutritionLabelApi
+  NutritionLabelApiDNSRecord:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Sub '${NutritionLabelApiCustomDomainName}.'
+          Type: 'A'
+          AliasTarget:
+            DNSName: !GetAtt NutritionLabelApiCustomDomainName.DistributionDomainName
+            HostedZoneId: !GetAtt NutritionLabelApiCustomDomainName.DistributionHostedZoneId
+  NutrionLabelApiGatewayDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn:
+      - NutritionLabelLambdaApiMethod
+      - NutritionLabelWebAppApiMethod
+    Properties:
+      RestApiId: !Ref NutritionLabelApi
+      StageName: 'prod'
