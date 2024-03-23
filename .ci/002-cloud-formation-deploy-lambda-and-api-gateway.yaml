@@ -78,11 +78,17 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: NutritionLabelApi
-  NutritionLabelLambdaApiResource:
+  NutritionLabelApiResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt NutritionLabelApi.RootResourceId
       PathPart: api
+      RestApiId: !Ref NutritionLabelApi
+  NutritionLabelApiGeneratePdfResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref NutritionLabelApiResource
+      PathPart: generate-pdf
       RestApiId: !Ref NutritionLabelApi
   NutritionLabelWebAppProxyResource:
     Type: AWS::ApiGateway::Resource
@@ -119,7 +125,6 @@ Resources:
         - StatusCode: 200
           ResponseParameters:
             method.response.header.Accept-Ranges: false
-            method.response.header.Content-Length: true
             method.response.header.Content-Type: true
       RequestParameters:
         method.request.path.proxy: true
@@ -135,7 +140,6 @@ Resources:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Accept-Ranges: integration.response.header.Accept-Ranges
-              method.response.header.Content-Length: integration.response.header.Content-Length
               method.response.header.Content-Type: integration.response.header.Content-Type
   NutritionLabelWebAppApiMethodIndex:
     Type: AWS::ApiGateway::Method
