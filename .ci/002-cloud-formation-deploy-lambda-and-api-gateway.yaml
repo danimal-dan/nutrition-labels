@@ -20,7 +20,7 @@ Resources:
   GeneratePdfLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
-      Handler: GeneratePdfHandler.py
+      Handler: GeneratePdfHandler.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.11
       Timeout: 120
@@ -115,12 +115,24 @@ Resources:
       HttpMethod: GET
       ResourceId: !Ref NutritionLabelWebAppProxyResource
       RestApiId: !Ref NutritionLabelApi
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            Content-Type: true
+      RequestParameters:
+        method.request.path.proxy: true
       Integration:
         IntegrationHttpMethod: GET
         PassthroughBehavior: WHEN_NO_MATCH
         Type: AWS
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/{key}'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/{proxy}'
         Credentials: !GetAtt ApiGatewayExecutionRole.Arn
+        RequestParameters:
+          integration.request.path.proxy: method.request.path.proxy
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
   # WebAppBucketPolicy:
   #   Type: AWS::S3::BucketPolicy
   #   Properties:
