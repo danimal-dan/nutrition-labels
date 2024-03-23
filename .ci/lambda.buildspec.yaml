@@ -14,7 +14,8 @@ phases:
     commands:
       - echo "Packaging Lambda function..."
       - cp ./*.py ./build
-      - zip -r generate-pdf-lambda-function.zip ./build/*
+      - cd build
+      - zip -r ../generate-pdf-lambda-function.zip .
 artifacts:
   files:
     - generate-pdf-lambda-function.zip
