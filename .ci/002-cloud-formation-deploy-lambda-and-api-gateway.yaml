@@ -118,7 +118,7 @@ Resources:
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
-            Content-Type: true
+            method.response.header.Content-Type: true
       RequestParameters:
         method.request.path.proxy: true
       Integration:
@@ -129,6 +129,26 @@ Resources:
         Credentials: !GetAtt ApiGatewayExecutionRole.Arn
         RequestParameters:
           integration.request.path.proxy: method.request.path.proxy
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
+  NutritionLabelWebAppApiMethodIndex:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !GetAtt NutritionLabelApi.RootResourceId
+      RestApiId: !Ref NutritionLabelApi
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Content-Type: true
+      Integration:
+        IntegrationHttpMethod: GET
+        Type: AWS
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/index.html'
+        Credentials: !GetAtt ApiGatewayExecutionRole.Arn
         IntegrationResponses:
           - StatusCode: 200
             ResponseParameters:
@@ -157,6 +177,7 @@ Resources:
     Properties:
       DomainName: !Ref NutritionLabelApiCustomDomainName
       RestApiId: !Ref NutritionLabelApi
+      Stage: 'prod'
   NutritionLabelApiDNSRecord:
     Type: AWS::Route53::RecordSetGroup
     Properties:
