@@ -101,7 +101,7 @@ Resources:
     Properties:
       AuthorizationType: NONE
       HttpMethod: POST
-      ResourceId: !Ref NutritionLabelLambdaApiResource
+      ResourceId: !Ref NutritionLabelApiGeneratePdfResource
       RestApiId: !Ref NutritionLabelApi
       Integration:
         IntegrationHttpMethod: POST
