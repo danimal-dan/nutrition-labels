@@ -71,6 +71,8 @@ Resources:
                 Action:
                   - s3:GetObject
                   - s3:PutObject
+                  - kms:Decrypt
+                  - kms:ReEncryptFrom
                 Resource: !Sub 'arn:aws:s3:::${WebAppBucketName}/*'
   NutritionLabelApi:
     Type: AWS::ApiGateway::RestApi
@@ -110,13 +112,14 @@ Resources:
     Type: AWS::ApiGateway::Method
     Properties:
       AuthorizationType: NONE
-      HttpMethod: ANY
+      HttpMethod: GET
       ResourceId: !Ref NutritionLabelWebAppProxyResource
       RestApiId: !Ref NutritionLabelApi
       Integration:
-        IntegrationHttpMethod: ANY
+        IntegrationHttpMethod: GET
+        PassthroughBehavior: WHEN_NO_MATCH
         Type: AWS
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/{key}'
         Credentials: !GetAtt ApiGatewayExecutionRole.Arn
   # WebAppBucketPolicy:
   #   Type: AWS::S3::BucketPolicy
