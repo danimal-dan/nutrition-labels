@@ -118,8 +118,9 @@ Resources:
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
-            method.response.header.Content-Type: true
             method.response.header.Accept-Ranges: false
+            method.response.header.Content-Length: true
+            method.response.header.Content-Type: true
       RequestParameters:
         method.request.path.proxy: true
       Integration:
@@ -133,8 +134,9 @@ Resources:
         IntegrationResponses:
           - StatusCode: 200
             ResponseParameters:
-              method.response.header.Content-Type: integration.response.header.Content-Type
               method.response.header.Accept-Ranges: integration.response.header.Accept-Ranges
+              method.response.header.Content-Length: integration.response.header.Content-Length
+              method.response.header.Content-Type: integration.response.header.Content-Type
   NutritionLabelWebAppApiMethodIndex:
     Type: AWS::ApiGateway::Method
     Properties:
