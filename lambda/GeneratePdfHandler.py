@@ -1,3 +1,4 @@
+import base64 
 import os
 import json
 from typing import List
@@ -12,6 +13,7 @@ def lambda_handler(event, context):
     try:
         data = json.loads(event['body'])
         template = int(data['template'])
+        emptySlotCount = int(data.get('emptySlotCount', 0))
         packetJson = data['labels']
     except (KeyError, TypeError, json.JSONDecodeError):
         return {'statusCode': 400, 'body': 'Invalid JSON structure'}
@@ -26,7 +28,20 @@ def lambda_handler(event, context):
         averyLabel = AveryLabel(template)
         packet = [LabelQuantityPair(**labelQuantityPair) for labelQuantityPair in packetJson]
         labelsToPrint = [label for pair in packet for label in [pair.label] * pair.quantity]; # flattens the packet into each label repeated the number of times specified by quantity
-        generate_pdf(averyLabel, labelsToPrint)
+        if emptySlotCount > 0:
+            emptyLabels = [EmptySpacerLabel()] * emptySlotCount
+            labelsToPrint = emptyLabels + labelsToPrint
+        pdfBytes = generate_pdf(averyLabel, labelsToPrint)
+
+        return {
+            'statusCode': 200,
+            'body': base64.encode(pdfBytes),
+            'headers': {
+                'content-type': 'application/pdf',
+                'content-disposition': 'attachment; filename="nutrition_labels.pdf"'
+            },
+            'isBase64Encoded': True
+        }
     except KeyError:
         return {'statusCode': 400, 'body': 'Invalid items structure'}
 
@@ -74,4 +89,4 @@ if __name__ == "__main__":
     child_name = os.environ.get('NUTRITION_LABELS_CHILD_NAME')
     print('child', child_name)
     header = child_name + ' - ' + datetime.now().strftime("%-m/%-d/%Y") if child_name else ''
-    generate_pdf(averyLabel, labelsToPrint, header)
+    print(generate_pdf(averyLabel, labelsToPrint, header))
