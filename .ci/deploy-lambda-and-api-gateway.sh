@@ -6,7 +6,6 @@ CODEPIPELINE_STACK_NAME="nutrition-labels-lambda-and-gateway-$(date +%Y-%m-%d-%H
 
 domainName=""
 hostedZoneId=""
-webAppBucketEndpoint=""
 webAppBucketName=""
 sslCertificateArn=""
 
@@ -20,10 +19,6 @@ do
         ;;
         --hosted-zone-id=*)
         hostedZoneId="${arg#*=}"
-        shift # Remove processed argument
-        ;;
-        --web-app-bucket-endpoint=*)
-        webAppBucketEndpoint="${arg#*=}"
         shift # Remove processed argument
         ;;
         --web-app-bucket-name=*)
@@ -53,13 +48,6 @@ then
 	exit 1
 fi
 
-if [ -z ${webAppBucketEndpoint} ]
-then
-	echo "PIPELINE CREATION FAILED!"
-        echo "--web-app-bucket-endpoint argument is required"
-	exit 1
-fi
-
 if [ -z ${webAppBucketName} ]
 then
 	echo "PIPELINE CREATION FAILED!"
@@ -79,7 +67,6 @@ aws cloudformation create-stack \
         --stack-name $CODEPIPELINE_STACK_NAME \
         --parameters ParameterKey=CustomDomainName,ParameterValue=${domainName} \
         ParameterKey=HostedZoneId,ParameterValue=${hostedZoneId} \
-        ParameterKey=WebAppBucketEndpoint,ParameterValue=${webAppBucketEndpoint} \
         ParameterKey=WebAppBucketName,ParameterValue=${webAppBucketName} \
         ParameterKey=SslCertificateArn,ParameterValue=${sslCertificateArn} \
         --template-body file://$(dirname "$0")/002-cloud-formation-deploy-lambda-and-api-gateway.yaml \

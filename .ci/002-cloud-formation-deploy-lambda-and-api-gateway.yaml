@@ -7,9 +7,6 @@ Parameters:
   WebAppBucketName:
     Type: String
     AllowedPattern: '[A-Za-z0-9-]*'
-  WebAppBucketEndpoint:
-    Type: String
-    AllowedPattern: '(https?:\/\/)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.amazonaws.com'
   SslCertificateArn:
     Type: String
     AllowedPattern: '^arn:aws:acm:\w+(?:-\w+)+:\d{12}:certificate\/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$'
