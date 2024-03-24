@@ -158,17 +158,6 @@ Resources:
           - StatusCode: 200
             ResponseParameters:
               method.response.header.Content-Type: integration.response.header.Content-Type
-  # WebAppBucketPolicy:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: !Ref WebAppBucketName
-  #     PolicyDocument:
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             CanonicalUser: !GetAtt WebAppDistributionOAI.S3CanonicalUserId
-  #           Action: s3:GetObject
-  #           Resource: !Sub arn:aws:s3:::${WebAppBucketName}/*
   NutritionLabelApiCustomDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
