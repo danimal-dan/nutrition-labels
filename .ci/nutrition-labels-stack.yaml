@@ -17,7 +17,7 @@ Parameters:
     AllowedPattern: '[A-Za-z0-9-]+'
   GitHubBranch:
     Type: String
-    Default: cicd
+    Default: main
     AllowedPattern: '[A-Za-z0-9-]+'
   CustomDomainName:
     Type: String
