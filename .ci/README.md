@@ -1,7 +1,6 @@
-A Single cloud formation file wasn't working
+# Cloud Formation Deployment
 
-We'll break it into steps:
+The Cloud Formation is split up into multiple steps.
 
-1. `001-cloud-formation-infra.yaml` - Sets up the bucket for the Nutrition Labels application, and the CodeBuild and Deploy Pipelines
-2. `002-lambda-pdf-generator-deployment.yaml` - Used to deploy the built function to AWS Lambda - this one uses the SAM transformer
-3. `002-cloud-front-and-api-gateway.yaml` - Afer the applications are built and stored in S3, sets up Cloudfront and the API Gateway
+1. `create-stack.sh` - Creates the required buckets, code pipeline, and API gateway.
+2. `functions/*` - Each function has its own Cloud Formation stack to create the function and register an endpoint on the API gateway for calling the function. This Cloud Formation stack is deployed by Code Pipeline.
