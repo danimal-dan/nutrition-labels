@@ -403,7 +403,7 @@ Resources:
                 Version: 1
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: Nutrition-Labels-Function-Pdf-Generator
+                StackName: !Sub '${AWS::StackName}-Fn-Pdf-Generator'
                 TemplatePath: SourceOutput::.ci/functions/generate-pdf-lambda-and-gateway-path.yaml
                 Capabilities: CAPABILITY_NAMED_IAM
                 ParameterOverrides: !Sub |
