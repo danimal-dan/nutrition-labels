@@ -1,0 +1,22 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing dependencies..."
+      - cd lambda
+      - pip install -r requirements.txt -t build/
+  pre_build:
+    commands:
+      - echo "Running tests (write some tests dummy)..."
+  build:
+    commands:
+      - echo "Packaging Lambda function..."
+      - cp ./*.py ./build
+      - cd build
+      - zip -r ../generate-pdf-lambda-function.zip .
+artifacts:
+  files:
+    - generate-pdf-lambda-function.zip
+  base-directory: lambda

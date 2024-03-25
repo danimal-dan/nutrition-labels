@@ -1,4 +1,5 @@
 import warnings
+from io import BytesIO
 from AveryLabels import AveryLabel
 from Models import Label
 from reportlab.pdfgen.canvas import Canvas
@@ -67,9 +68,13 @@ def divideIngredientListIntoLines(ingredients: list[str], canv: Canvas,  maxWidt
 
 
 def generate_pdf(template: AveryLabel, labels: list[Label], headerLine: str = ''):
-  template.open('test.pdf')
+  buffer = BytesIO()
+  template.open(buffer)
   if headerLine:
     template.render(lambda *args, **kwargs: render_function(*args, headerLine, **kwargs), iter(labels), headerLine)
   else:
     template.render(render_function, iter(labels), headerLine)
+
   template.close()
+  
+  return buffer.getvalue()
