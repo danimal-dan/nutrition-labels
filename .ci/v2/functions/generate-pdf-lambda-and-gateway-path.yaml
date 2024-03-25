@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates Generate PDF lambda function and registers a path in the API gateway
+Parameters:
+  RestApiId:
+    Type: String
+    AllowedPattern: '[A-Za-z0-9-]*'
+  ParentPathResourceId:
+    Type: String
+    AllowedPattern: '[A-Za-z0-9-]*'
+Resources:
+  GeneratePdfLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: GeneratePdfHandler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.11
+      Timeout: 120
+      Code:
+        S3Bucket: nutrition-labels-lambda
+        S3Key: generate-pdf-lambda-function.zip
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: '*'
+  NutritionLabelApiGeneratePdfResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref ParentPathResourceId
+      PathPart: generate-pdf
+      RestApiId: !Ref RestApiId
+  NutritionLabelLambdaApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref NutritionLabelApiGeneratePdfResource
+      RestApiId: !Ref RestApiId
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePdfLambdaFunction.Arn}/invocations
+  LambdaApiGatewayInvoke:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GeneratePdfLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*/*
