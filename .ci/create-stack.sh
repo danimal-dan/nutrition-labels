@@ -69,6 +69,6 @@ aws cloudformation create-stack \
         ParameterKey=GitHubOAuthToken,ParameterValue=${githubAuthToken} \
         ParameterKey=HostedZoneId,ParameterValue=${hostedZoneId} \
         ParameterKey=SslCertificateArn,ParameterValue=${sslCertificateArn} \
-        --template-body file://$(dirname "$0")/nutrition-labels-stack.yaml \
+        --template-body file://$(dirname "$0")/nutrition-labels-stack-api-v2.yaml \
         --region us-east-1 \
         --profile default
