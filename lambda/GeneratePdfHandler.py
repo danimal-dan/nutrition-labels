@@ -19,7 +19,7 @@ def lambda_handler(event, context):
         return {'statusCode': 400, 'body': 'Invalid JSON structure'}
 
     # Validate the label
-    if template not in [5160, 5161, 5163, 5167, 5371]:
+    if template not in [4224, 5160, 5161, 5163, 5167, 5371]:
         return {'statusCode': 400, 'body': 'Invalid template'}
     
 

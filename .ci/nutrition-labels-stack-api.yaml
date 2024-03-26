@@ -41,6 +41,17 @@ Resources:
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
+  NutrionLabelsWebAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref NutritionLabelsWebAppBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${NutritionLabelsWebAppBucket}/*'
   NutritionLabelsLambdaBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -108,86 +119,69 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
   NutritionLabelApi:
-    Type: AWS::ApiGateway::RestApi
+    Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: NutritionLabelApi
-  NutritionLabelApiResource:
-    Type: AWS::ApiGateway::Resource
+      ProtocolType: HTTP
+  NutritionLabelApiDefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ParentId: !GetAtt NutritionLabelApi.RootResourceId
-      PathPart: api
-      RestApiId: !Ref NutritionLabelApi
-  NutritionLabelWebAppProxyResource:
-    Type: AWS::ApiGateway::Resource
+      ApiId: !Ref NutritionLabelApi
+      AutoDeploy: true
+      StageName: '$default'
+  NutritionLabelWebAppProxyIntegration:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ParentId: !GetAtt NutritionLabelApi.RootResourceId
-      PathPart: '{proxy+}'
-      RestApiId: !Ref NutritionLabelApi
-  NutritionLabelWebAppApiMethod:
-    Type: AWS::ApiGateway::Method
+      ApiId: !Ref NutritionLabelApi
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      IntegrationUri: !Sub
+        - '${baseUrl}/{proxy}'
+        - baseUrl: !GetAtt NutritionLabelsWebAppBucket.WebsiteURL
+      CredentialsArn: !GetAtt ApiGatewayExecutionRole.Arn
+      PayloadFormatVersion: '1.0'
+  NutritionLabelWebAppProxyRoute:
+    Type: AWS::ApiGatewayV2::Route
     Properties:
-      AuthorizationType: NONE
-      HttpMethod: GET
-      ResourceId: !Ref NutritionLabelWebAppProxyResource
-      RestApiId: !Ref NutritionLabelApi
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Accept-Ranges: false
-            method.response.header.Content-Type: true
-      RequestParameters:
-        method.request.path.proxy: true
-      Integration:
-        IntegrationHttpMethod: GET
-        PassthroughBehavior: WHEN_NO_MATCH
-        Type: AWS
-        Uri: !Sub
-          - 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/{proxy}'
-          - WebAppBucketName: !Ref NutritionLabelsWebAppBucket
-        Credentials: !GetAtt ApiGatewayExecutionRole.Arn
-        RequestParameters:
-          integration.request.path.proxy: method.request.path.proxy
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Accept-Ranges: integration.response.header.Accept-Ranges
-              method.response.header.Content-Type: integration.response.header.Content-Type
-  NutritionLabelWebAppApiMethodIndex:
-    Type: AWS::ApiGateway::Method
+      ApiId: !Ref NutritionLabelApi
+      RouteKey: 'GET /{proxy+}'
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref NutritionLabelWebAppProxyIntegration
+  NutritionLabelWebAppProxyIntegrationIndex:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      AuthorizationType: NONE
-      HttpMethod: GET
-      ResourceId: !GetAtt NutritionLabelApi.RootResourceId
-      RestApiId: !Ref NutritionLabelApi
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Content-Type: true
-      Integration:
-        IntegrationHttpMethod: GET
-        Type: AWS
-        Uri: !Sub
-          - 'arn:aws:apigateway:${AWS::Region}:s3:path/${WebAppBucketName}/index.html'
-          - WebAppBucketName: !Ref NutritionLabelsWebAppBucket
-        Credentials: !GetAtt ApiGatewayExecutionRole.Arn
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Content-Type: integration.response.header.Content-Type
+      ApiId: !Ref NutritionLabelApi
+      IntegrationType: HTTP_PROXY
+      IntegrationMethod: ANY
+      IntegrationUri: !Sub
+        - '${baseUrl}/index.html'
+        - baseUrl: !GetAtt NutritionLabelsWebAppBucket.WebsiteURL
+      CredentialsArn: !GetAtt ApiGatewayExecutionRole.Arn
+      PayloadFormatVersion: '1.0'
+  NutritionLabelWebAppProxyRouteIndex:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref NutritionLabelApi
+      RouteKey: 'GET /'
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref NutritionLabelWebAppProxyIntegrationIndex
   NutritionLabelApiCustomDomainName:
-    Type: AWS::ApiGateway::DomainName
+    Type: AWS::ApiGatewayV2::DomainName
     Properties:
       DomainName: !Ref CustomDomainName
-      CertificateArn: !Ref SslCertificateArn
-      EndpointConfiguration:
-        Types:
-          - 'EDGE'
-  NutritionLabelApiBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: !Ref SslCertificateArn
+  NutritionLabelApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
     Properties:
+      ApiId: !Ref NutritionLabelApi
       DomainName: !Ref NutritionLabelApiCustomDomainName
-      RestApiId: !Ref NutritionLabelApi
-      Stage: 'prod'
+      Stage: !Ref NutritionLabelApiDefaultStage
   NutritionLabelApiDNSRecord:
     Type: AWS::Route53::RecordSetGroup
     Properties:
@@ -196,15 +190,8 @@ Resources:
         - Name: !Sub '${NutritionLabelApiCustomDomainName}.'
           Type: 'A'
           AliasTarget:
-            DNSName: !GetAtt NutritionLabelApiCustomDomainName.DistributionDomainName
-            HostedZoneId: !GetAtt NutritionLabelApiCustomDomainName.DistributionHostedZoneId
-  NutrionLabelApiGatewayDeployment:
-    Type: 'AWS::ApiGateway::Deployment'
-    DependsOn:
-      - NutritionLabelWebAppApiMethod
-    Properties:
-      RestApiId: !Ref NutritionLabelApi
-      StageName: 'prod'
+            DNSName: !GetAtt NutritionLabelApiCustomDomainName.RegionalDomainName
+            HostedZoneId: !GetAtt NutritionLabelApiCustomDomainName.RegionalHostedZoneId
   NutrionLabelsBuildAndDeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -408,8 +395,7 @@ Resources:
                 Capabilities: CAPABILITY_NAMED_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "RestApiId": "${NutritionLabelApi}",
-                    "ParentPathResourceId": "${NutritionLabelApiResource}"
+                    "RestApiId": "${NutritionLabelApi}"
                   }
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
               InputArtifacts:
