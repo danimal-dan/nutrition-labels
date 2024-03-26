@@ -391,7 +391,7 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 StackName: !Sub '${AWS::StackName}-Fn-Pdf-Generator'
-                TemplatePath: SourceOutput::.ci/functions/generate-pdf-lambda-and-gateway-path-v2.yaml
+                TemplatePath: SourceOutput::.ci/functions/generate-pdf-lambda-and-gateway-path.yaml
                 Capabilities: CAPABILITY_NAMED_IAM
                 ParameterOverrides: !Sub |
                   {

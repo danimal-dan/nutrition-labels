@@ -4,9 +4,6 @@ Parameters:
   RestApiId:
     Type: String
     AllowedPattern: '[A-Za-z0-9-]*'
-  ParentPathResourceId:
-    Type: String
-    AllowedPattern: '[A-Za-z0-9-]*'
 Resources:
   GeneratePdfLambdaFunction:
     Type: AWS::Lambda::Function
@@ -41,23 +38,25 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: '*'
-  NutritionLabelApiGeneratePdfResource:
-    Type: AWS::ApiGateway::Resource
+  NutritionLabelApiGeneratePdfIntegration:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ParentId: !Ref ParentPathResourceId
-      PathPart: generate-pdf
-      RestApiId: !Ref RestApiId
-  NutritionLabelLambdaApiMethod:
-    Type: AWS::ApiGateway::Method
+      ApiId: !Ref RestApiId
+      Description: Integration for the PDF generation Lambda function
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePdfLambdaFunction.Arn}/invocations
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 30000 # Adjust as needed
+  NutritionLabelApiGeneratePdfRoute:
+    Type: AWS::ApiGatewayV2::Route
     Properties:
-      AuthorizationType: NONE
-      HttpMethod: POST
-      ResourceId: !Ref NutritionLabelApiGeneratePdfResource
-      RestApiId: !Ref RestApiId
-      Integration:
-        IntegrationHttpMethod: POST
-        Type: AWS_PROXY
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GeneratePdfLambdaFunction.Arn}/invocations
+      ApiId: !Ref RestApiId # Ensure this references your HTTP API resource's ID
+      RouteKey: POST /api/generate-pdf
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref NutritionLabelApiGeneratePdfIntegration
   LambdaApiGatewayInvoke:
     Type: AWS::Lambda::Permission
     Properties:
