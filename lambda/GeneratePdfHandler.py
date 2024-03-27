@@ -35,7 +35,7 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': base64.encode(pdfBytes),
+            'body': base64.b64encode(pdfBytes),
             'headers': {
                 'content-type': 'application/pdf',
                 'content-disposition': 'attachment; filename="nutrition_labels.pdf"'

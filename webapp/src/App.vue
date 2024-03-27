@@ -43,7 +43,7 @@
       v-if="selectedLabels.length"
       class="action-bar surface-section border-top-2 surface-border fixed flex justify-content-center bottom-0 left-0 p-2 w-full"
     >
-      <Button class="text-white" rounded><strong>Print Labels</strong></Button>
+      <Button class="text-white" rounded @click="onPrint"><strong>Print Labels</strong></Button>
     </div>
   </section>
 </template>
@@ -57,6 +57,8 @@ import InputNumber from 'primevue/inputnumber'
 import LabelEditForm from '@/components/label/LabelEditForm.vue'
 import LabelView from '@/components/label/LabelView.vue'
 import MagicSearchBar from './components/label/magicSearch/MagicSearchBar.vue'
+
+import axios from 'axios'
 
 import { Label } from '@/model'
 
@@ -110,6 +112,25 @@ const onRemove = (label: Label) => {
   )
 
   selectedLabels.value.splice(currentIndex, 1)
+}
+
+const onPrint = async () => {
+  const response = await axios.post(
+    '/api/generate-pdf',
+    JSON.parse(`{
+    "template": 4224,
+    "labels": [
+        { "quantity": 1, "label": {"name": "Water", "ingredients": ["H2O"]}},
+        { "quantity": 5, "label": {"name": "Soup", "ingredients": ["Naadfkjdafaklj", "Chloridad", "Pear", "Baking Soda", "Chicken Broth", { "name": "Formula", "ingredients": ["Aadfadf", "Badsfdafaf"]}]}}
+    ]
+}`),
+    {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+  console.info('response', response)
 }
 </script>
 
