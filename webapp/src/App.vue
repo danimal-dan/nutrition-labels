@@ -115,22 +115,19 @@ const onRemove = (label: Label) => {
 }
 
 const onPrint = async () => {
-  const response = await axios.post(
-    '/api/generate-pdf',
-    JSON.parse(`{
-    "template": 4224,
-    "labels": [
-        { "quantity": 1, "label": {"name": "Water", "ingredients": ["H2O"]}},
-        { "quantity": 5, "label": {"name": "Soup", "ingredients": ["Naadfkjdafaklj", "Chloridad", "Pear", "Baking Soda", "Chicken Broth", { "name": "Formula", "ingredients": ["Aadfadf", "Badsfdafaf"]}]}}
-    ]
-}`),
-    {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-  )
+  const payload = {
+    template: 4224,
+    emptySlotCount: 0,
+    labels: selectedLabels.value
+  }
+
+  const response = await axios.post('/api/generate-pdf', payload)
+
   console.info('response', response)
+
+  var file = new Blob([response.data], { type: 'application/pdf' })
+  var fileURL = URL.createObjectURL(file)
+  window.open(fileURL)
 }
 </script>
 

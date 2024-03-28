@@ -10,8 +10,9 @@ class IngredientJsonFactory:
             return Ingredient.of(data)
 
 class Ingredient:
-    def __init__(self, name: str):
+    def __init__(self, name: str, uuid: str = None):
         self.name = name.lower()
+        self.uuid = uuid
     
     @classmethod
     def of(cls, val: Union[dict, 'Ingredient', str]):
@@ -29,10 +30,10 @@ class Ingredient:
         return self.name
 
 class CompositeIngredient(Ingredient):
-    def __init__(self, name: str, ingredients: List[Ingredient] = [], uuid_str: str = None):
+    def __init__(self, name: str, ingredients: List[Ingredient] = [], uuid: str = None):
         super().__init__(name)
         self.ingredients = ingredients
-        self.uuid = uuid_str or str(uuid.uuid4())
+        self.uuid = uuid or str(uuid.uuid4())
         self.created = None
         self.lastModified = None
         self.lastUsed = None
@@ -44,10 +45,10 @@ class CompositeIngredient(Ingredient):
         return ', '.join([str(ingredient) for ingredient in self.ingredients])
     
 class Label:
-    def __init__(self, name: str, ingredients: List[Union[dict, Ingredient, str]] = [], uuid_str: str = None):
+    def __init__(self, name: str, ingredients: List[Union[dict, Ingredient, str]] = [], uuid: str = None):
         self.name = name
         self.ingredients = [IngredientJsonFactory.load(ingredient) for ingredient in ingredients]
-        self.uuid = uuid_str or str(uuid.uuid4())
+        self.uuid = uuid or str(uuid.uuid4())
         self.created = None
         self.lastModified = None
         self.lastUsed = None
