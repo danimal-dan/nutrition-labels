@@ -1,7 +1,14 @@
 <template>
   <header class="flex m-3 align-items-center">
     <h1 class="flex-auto">Nutrition Labels</h1>
-    <i class="pi pi-cog" style="font-size: 1.5rem" />
+    <Button
+      class="text-white text-xl"
+      icon="pi pi-cog"
+      :pt="{ icon: { style: 'font-size: 1.5rem' } }"
+      text
+      rounded
+      @click="onShowSettingsDialog"
+    />
   </header>
   <section>
     <div class="flex flex-auto my-3">
@@ -43,24 +50,100 @@
       v-if="selectedLabels.length"
       class="action-bar surface-section border-top-2 surface-border fixed flex justify-content-center bottom-0 left-0 p-2 w-full"
     >
-      <Button class="text-white" rounded @click="onPrint"><strong>Print Labels</strong></Button>
+      <Button class="text-white font-bold" rounded @click="onShowPrintDialog">Print Labels</Button>
     </div>
+    <Dialog v-model:visible="printDialog.visible" modal header="Print Dialog">
+      <Card
+        class="print-preview mb-3 p-0"
+        style="font-size: 0.8em"
+        :pt="{ body: { class: 'p-1' }, content: { class: 'p-0' } }"
+      >
+        <template #header>
+          <h3>Preview</h3>
+        </template>
+        <template #content>
+          <ul>
+            <li v-for="selectedLabel in selectedLabels" :key="selectedLabel.label.uuid">
+              {{ selectedLabel.quantity }} - {{ selectedLabel.label.name }}
+            </li>
+          </ul>
+        </template>
+      </Card>
+      <div class="flex flex-column mb-3">
+        <label class="text-sm text-uppercase mb-1" for="childName">Child Name</label>
+        <InputText id="childName" v-model="printDialog.childName" placeholder="Child Name" />
+      </div>
+      <div class="flex flex-column">
+        <label class="text-sm text-uppercase mb-1" for="emptySlots">Empty Slots</label>
+        <InputNumber
+          id="emptySlots"
+          v-model="printDialog.emptySlots"
+          show-buttons
+          :min="0"
+          :max="16"
+        />
+      </div>
+      <template #footer>
+        <Button text @click="onCancelPrint">Cancel</Button>
+        <Button
+          class="text-white font-bold"
+          primary
+          :loading="printDialog.printing"
+          @click="onPrint"
+          >Print</Button
+        >
+      </template>
+    </Dialog>
+    <Dialog v-model:visible="settingsDialog.visible" modal header="Settings">
+      <div class="flex flex-column mb-3">
+        <label class="text-sm text-uppercase mb-1" for="settings-childName">Child Name</label>
+        <InputText
+          id="settings-childName"
+          v-model="settingsDialog.childName"
+          placeholder="Child Name"
+        />
+      </div>
+      <div class="flex flex-column">
+        <label class="text-sm text-uppercase mb-1" for="averyTemplate">Avery Template</label>
+        <Dropdown
+          id="averyTemplate"
+          v-model="settingsDialog.averyTemplate"
+          :options="settings.getAveryTemplateOptions()"
+        />
+      </div>
+      <template #footer>
+        <Button text @click="onCancelSettings">Cancel</Button>
+        <Button class="text-white font-bold" primary @click="onSaveSettings">Save</Button>
+      </template>
+    </Dialog>
+    <Toast />
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { useSettings } from '@/composables/useSettings'
+import { useToast } from 'primevue/usetoast'
+
 import Button from 'primevue/button'
+import Card from 'primevue/card'
 import DataView from 'primevue/dataview'
+import Dialog from 'primevue/dialog'
+import Dropdown from 'primevue/dropdown'
 import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
 import LabelEditForm from '@/components/label/LabelEditForm.vue'
 import LabelView from '@/components/label/LabelView.vue'
 import MagicSearchBar from './components/label/magicSearch/MagicSearchBar.vue'
+import Toast from 'primevue/toast'
 
 import axios from 'axios'
 
 import { Label } from '@/model'
+
+const settings = useSettings()
+const toast = useToast()
 
 type SelectedLabel = {
   quantity: number
@@ -68,6 +151,18 @@ type SelectedLabel = {
 }
 
 const selectedLabels = ref([] as SelectedLabel[])
+const printDialog = ref({
+  visible: false,
+  childName: settings.getChildName(),
+  emptySlots: 0,
+  printing: false
+})
+
+const settingsDialog = ref({
+  visible: false,
+  childName: settings.getChildName(),
+  averyTemplate: settings.getAveryTemplate()
+})
 
 const editModeLabelUuid = ref(undefined as undefined | string)
 
@@ -114,20 +209,70 @@ const onRemove = (label: Label) => {
   selectedLabels.value.splice(currentIndex, 1)
 }
 
+const onShowPrintDialog = () => {
+  printDialog.value.childName = settings.getChildName()
+  printDialog.value.visible = true
+}
+
 const onPrint = async () => {
   const payload = {
-    template: 4224,
-    emptySlotCount: 0,
+    template: settings.getAveryTemplate(),
+    headerLine: `${printDialog.value.childName} ${new Date().toLocaleDateString('en-US')}`.trim(),
+    emptySlotCount: printDialog.value.emptySlots,
     labels: selectedLabels.value
   }
 
-  const response = await axios.post('/api/generate-pdf', payload)
+  if (printDialog.value.childName) {
+    settings.setChildName(printDialog.value.childName)
+  }
 
-  console.info('response', response)
+  try {
+    printDialog.value.printing = true
+    const response = await axios.post('/api/generate-pdf', payload)
 
-  var file = new Blob([response.data], { type: 'application/pdf' })
-  var fileURL = URL.createObjectURL(file)
-  window.open(fileURL)
+    var file = new Blob([response.data], { type: 'application/pdf' })
+    var fileURL = URL.createObjectURL(file)
+    window.open(fileURL)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'PDF Generated',
+      life: 3000
+    })
+  } catch (e: any) {
+    console.error('failed to generate pdf', e)
+    toast.add({
+      severity: 'error',
+      summary: 'Error - Failed to Generate PDF',
+      detail: `${e?.message} - ${e?.response?.data}`,
+      life: 3000
+    })
+  } finally {
+    printDialog.value.printing = false
+  }
+}
+
+const onCancelPrint = () => {
+  printDialog.value.emptySlots = 0
+  printDialog.value.visible = false
+}
+
+const onShowSettingsDialog = () => {
+  settingsDialog.value.childName = settings.getChildName()
+  settingsDialog.value.visible = true
+}
+
+const onSaveSettings = () => {
+  settings.setChildName(settingsDialog.value.childName)
+  settings.setAveryTemplate(settingsDialog.value.averyTemplate)
+  settingsDialog.value.visible = false
+}
+
+const onCancelSettings = () => {
+  settingsDialog.value.averyTemplate = settings.getAveryTemplate()
+  settingsDialog.value.childName = settings.getChildName()
+  settingsDialog.value.visible = false
 }
 </script>
 
@@ -151,3 +296,4 @@ html {
   }
 }
 </style>
+@/composables/useSettings

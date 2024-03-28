@@ -13,6 +13,7 @@ def lambda_handler(event, context):
     try:
         data = json.loads(event['body'])
         template = int(data['template'])
+        headerLine = data.get('headerLine', '')
         emptySlotCount = int(data.get('emptySlotCount', 0))
         packetJson = data['labels']
     except (KeyError, TypeError, json.JSONDecodeError):
@@ -31,7 +32,7 @@ def lambda_handler(event, context):
         if emptySlotCount > 0:
             emptyLabels = [EmptySpacerLabel()] * emptySlotCount
             labelsToPrint = emptyLabels + labelsToPrint
-        pdfBytes = generate_pdf(averyLabel, labelsToPrint)
+        pdfBytes = generate_pdf(averyLabel, labelsToPrint, headerLine)
 
         return {
             'statusCode': 200,

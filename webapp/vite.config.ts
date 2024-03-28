@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       '/api/generate-pdf': {
         target:
-          'http://eaw47johq1lfkhf0hhh99e380plbbkaa.lambda-url.us-east-1.localhost.localstack.cloud:4566/',
+          'http://q1rm4qkmyx878om488yv3wiumw8e8tog.lambda-url.us-east-1.localhost.localstack.cloud:4566/',
         changeOrigin: true,
         secure: false,
         rewrite: () => '' // clear path

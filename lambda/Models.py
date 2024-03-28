@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 from typing import List, Union, Optional
 
 class IngredientJsonFactory:
@@ -33,7 +33,7 @@ class CompositeIngredient(Ingredient):
     def __init__(self, name: str, ingredients: List[Ingredient] = [], uuid: str = None):
         super().__init__(name)
         self.ingredients = ingredients
-        self.uuid = uuid or str(uuid.uuid4())
+        self.uuid = uuid or str(uuid4())
         self.created = None
         self.lastModified = None
         self.lastUsed = None
@@ -48,7 +48,7 @@ class Label:
     def __init__(self, name: str, ingredients: List[Union[dict, Ingredient, str]] = [], uuid: str = None):
         self.name = name
         self.ingredients = [IngredientJsonFactory.load(ingredient) for ingredient in ingredients]
-        self.uuid = uuid or str(uuid.uuid4())
+        self.uuid = uuid or str(uuid4())
         self.created = None
         self.lastModified = None
         self.lastUsed = None
