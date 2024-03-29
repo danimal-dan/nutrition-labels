@@ -226,14 +226,19 @@ const onPrint = async () => {
     settings.setChildName(printDialog.value.childName)
   }
 
+  // open window early to workaround popup-blocker for Safari on iOS
+  const pdfViewer = window.open()
   try {
     printDialog.value.printing = true
     const response = await axios.post('/api/generate-pdf', payload)
 
     var file = new Blob([response.data], { type: 'application/pdf' })
     var fileURL = URL.createObjectURL(file)
-    window.open(fileURL)
-
+    if (pdfViewer) {
+      pdfViewer.location.href = fileURL
+    } else {
+      window.open(fileURL)
+    }
     toast.add({
       severity: 'success',
       summary: 'Success',
@@ -248,6 +253,9 @@ const onPrint = async () => {
       detail: `${e?.message} - ${e?.response?.data}`,
       life: 3000
     })
+    if (pdfViewer) {
+      pdfViewer.close()
+    }
   } finally {
     printDialog.value.printing = false
   }

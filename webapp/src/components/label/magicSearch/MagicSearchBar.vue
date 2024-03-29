@@ -5,10 +5,11 @@
     </InputGroupAddon>
     <InputText
       icon="pi pi-search"
+      ref="magicInputTextInput"
       v-model="magicInputTextValue"
       placeholder="Start typing a label name..."
       @input="onMagicInputChange($event)"
-      @focus="onMagicInputChange($event)"
+      @focus="onFocus($event)"
     />
     <InputGroupAddon v-show="magicInputTextValue.length">
       <i class="pi pi-times" @click="magicInputTextValue = ''" />
@@ -38,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, type ComponentPublicInstance } from 'vue'
 
 import InputGroup from 'primevue/inputgroup'
 import InputGroupAddon from 'primevue/inputgroupaddon'
@@ -52,6 +53,7 @@ const emit = defineEmits<{
   create: [Label]
 }>()
 
+const magicInputTextInput = ref<ComponentPublicInstance | null>(null)
 const magicInputOverlay = ref<OverlayPanel | null>(null)
 
 const magicInputTextValue = ref('')
@@ -67,6 +69,11 @@ const onMagicInputChange = (event: Event) => {
   } else {
     magicInputOverlay.value.show(event)
   }
+}
+
+const onFocus = (event: Event) => {
+  onMagicInputChange(event)
+  magicInputTextInput?.value?.$el.scrollIntoView({ behavior: 'smooth' })
 }
 
 const { betterThanBoullionChicken } = useIngredients()
