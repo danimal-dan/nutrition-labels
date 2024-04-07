@@ -76,8 +76,6 @@ const onFocus = (event: Event) => {
   magicInputTextInput?.value?.$el.scrollIntoView({ behavior: 'smooth' })
 }
 
-const { betterThanBoullionChicken } = useIngredients()
-
 const labels = ref([
   new Label('Roasted Carrots', ['carrot', 'salt', 'pepper', 'avocado oil']),
   new Label('Hamburger', [
@@ -88,9 +86,31 @@ const labels = ref([
     'pepper',
     'avocado oil'
   ]),
+  new Label('Blueberry Muffin', [
+    'flour',
+    'blueberry',
+    'lemon',
+    'apple sauce',
+    'whole milk',
+    'vegan butter',
+    'sugar',
+    'baking powder',
+    'vanilla',
+    'salt'
+  ]),
+  new Label('Pancakes', [
+    'flour',
+    'apple sauce',
+    'ripple milk',
+    'avocado oil',
+    'sugar',
+    'baking powder',
+    'vanilla',
+    'salt'
+  ]),
   new Label('Green Beans', [
     'green beans',
-    betterThanBoullionChicken,
+    'chicken stock',
     'salt',
     'pepper',
     'mushroom powder',

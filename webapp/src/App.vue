@@ -33,6 +33,7 @@
                     show-buttons
                     v-model="item.quantity"
                     button-layout="vertical"
+                    :input-props="{ inputmode: 'numeric' }"
                     :min="1"
                   />
                   <Button class="remove" text label="Remove" @click="onRemove(item)" />
@@ -78,6 +79,7 @@
         <InputNumber
           id="emptySlots"
           v-model="printDialog.emptySlots"
+          :input-props="{ inputmode: 'numeric' }"
           show-buttons
           :min="0"
           :max="16"
