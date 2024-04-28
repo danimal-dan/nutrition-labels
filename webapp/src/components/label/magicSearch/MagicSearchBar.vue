@@ -86,6 +86,24 @@ const labels = ref([
     'pepper',
     'avocado oil'
   ]),
+  new Label('Chicken', [
+    'chicken',
+    'onion powder',
+    'garlic powder',
+    'rosemary',
+    'salt',
+    'pepper',
+    'avocado oil'
+  ]),
+  new Label('Pork Chop', [
+    'pork',
+    'onion powder',
+    'garlic powder',
+    'rosemary',
+    'salt',
+    'pepper',
+    'avocado oil'
+  ]),
   new Label('Blueberry Muffin', [
     'flour',
     'blueberry',
@@ -113,8 +131,19 @@ const labels = ref([
     'chicken stock',
     'salt',
     'pepper',
-    'mushroom powder',
+    'garlic powder',
+    'onion powder',
     'apple cider vinegar'
+  ]),
+  new Label('Corn', ['corn', 'chicken stock', 'salt', 'pepper', 'garlic powder', 'onion powder']),
+  new Label('Tater Tot Casserole', [
+    'potatos',
+    'breakfast sausage',
+    'Ripple milk',
+    'flax seed',
+    'salt',
+    'pepper',
+    'avocado oil'
   ])
 ] as Label[])
 
