@@ -16,7 +16,7 @@
     </InputGroupAddon>
     <OverlayPanel ref="magicInputOverlay" :pt="{ content: { class: 'p-0' } }">
       <div
-        v-for="label in labels"
+        v-for="label in filteredLabels"
         :key="label.name"
         class="label flex flex-column border-top-2 border-200 p-3"
         @click="onLabelClick(label)"
@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, type ComponentPublicInstance } from 'vue'
+import { computed, ref, type ComponentPublicInstance } from 'vue'
 
 import InputGroup from 'primevue/inputgroup'
 import InputGroupAddon from 'primevue/inputgroupaddon'
@@ -137,15 +137,39 @@ const labels = ref([
   ]),
   new Label('Corn', ['corn', 'chicken stock', 'salt', 'pepper', 'garlic powder', 'onion powder']),
   new Label('Tater Tot Casserole', [
-    'potatos',
+    'potatoes',
     'breakfast sausage',
     'Ripple milk',
     'flax seed',
     'salt',
     'pepper',
     'avocado oil'
+  ]),
+  new Label('Turkey Burger', ['turkey', 'salt', 'pepper', 'mushroom powder', 'avocado oil']),
+  new Label('Boiled Potatoes', ['potato', 'salt', 'pepper']),
+  new Label('Blueberry Pancakes', [
+    'flour',
+    'blueberry',
+    'buttermilk',
+    'butter',
+    'baking powder',
+    'baking soda',
+    'salt'
   ])
 ] as Label[])
+
+const filteredLabels = computed(() => {
+  const searchTerm = magicInputTextValue.value?.toLocaleLowerCase() ?? ''
+  if (!searchTerm.length) {
+    return labels.value
+  }
+
+  return labels.value.filter((label: Label) => {
+    const labelName = label.name.toLocaleLowerCase()
+
+    return labelName.includes(searchTerm)
+  })
+})
 
 const onLabelClick = (label: Label) => {
   emit('add', label)
