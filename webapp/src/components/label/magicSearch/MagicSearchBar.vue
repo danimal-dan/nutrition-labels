@@ -3,34 +3,21 @@
     <InputGroupAddon>
       <i class="pi pi-search" />
     </InputGroupAddon>
-    <InputText
-      icon="pi pi-search"
-      ref="magicInputTextInput"
-      v-model="magicInputTextValue"
-      placeholder="Start typing a label name..."
-      @input="onMagicInputChange($event)"
-      @focus="onFocus($event)"
-    />
+    <InputText icon="pi pi-search" ref="magicInputTextInput" v-model="magicInputTextValue"
+      placeholder="Start typing a label name..." @input="onMagicInputChange($event)" @focus="onFocus($event)" />
     <InputGroupAddon v-show="magicInputTextValue.length">
       <i class="pi pi-times" @click="magicInputTextValue = ''" />
     </InputGroupAddon>
     <OverlayPanel ref="magicInputOverlay" :pt="{ content: { class: 'p-0' } }">
-      <div
-        v-for="label in filteredLabels"
-        :key="label.name"
-        class="label flex flex-column border-top-2 border-200 p-3"
-        @click="onLabelClick(label)"
-      >
+      <div v-for="label in filteredLabels" :key="label.name" class="label flex flex-column border-top-2 border-200 p-3"
+        @click="onLabelClick(label)">
         <strong class="label-name text-primary">{{ label.name }}</strong>
         <small class="overlay-ingredient-list font-italic">{{
           label.ingredients.join(', ')
-        }}</small>
+          }}</small>
       </div>
-      <div
-        v-show="magicInputTextValue?.length"
-        class="label create-new-panel border-top-2 border-200 p-3"
-        @click="onCreateNewClick"
-      >
+      <div v-show="magicInputTextValue?.length" class="label create-new-panel border-top-2 border-200 p-3"
+        @click="onCreateNewClick">
         <i class="pi pi-plus-circle" /> Create:
         <strong class="text-primary">{{ magicInputTextValue }}</strong>
       </div>
@@ -119,7 +106,7 @@ const labels = ref([
   new Label('Pancakes', [
     'flour',
     'apple sauce',
-    'ripple milk',
+    'milk',
     'avocado oil',
     'sugar',
     'baking powder',
@@ -155,7 +142,11 @@ const labels = ref([
     'baking powder',
     'baking soda',
     'salt'
-  ])
+  ]),
+  new Label('Pork Tenderloin', ['pork', 'garlic', 'oregano', 'beef broth', 'chili powder', 'onion powder', 'brown sugar', 'butter']),
+  new Label('Quinoa', ['quinoa', 'chicken broth', 'salt', 'pepper']),
+  new Label('Black Beans', ['black beans', 'onion powder', 'garlic powder', 'salt', 'pepper']),
+  new Label('Chicken - Italian Marinade)', ['chicken', 'olive oil', 'balsamic vinegar', 'parmesan cheese', 'romano cheese'])
 ] as Label[])
 
 const filteredLabels = computed(() => {
