@@ -25,7 +25,7 @@ export const useIngredients = (): {
     new Ingredient('mushroom powder'),
     new Ingredient('avocado oil'),
     new Ingredient('apple cider vinegar'),
-    new Ingredient('garlic power'),
+    new Ingredient('garlic powder'),
     new Ingredient('onion powder'),
     new Ingredient('beef'),
     new Ingredient('pork'),

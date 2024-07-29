@@ -146,7 +146,7 @@ const labels = ref([
   new Label('Pork Tenderloin', ['pork', 'garlic', 'oregano', 'beef broth', 'chili powder', 'onion powder', 'brown sugar', 'butter']),
   new Label('Quinoa', ['quinoa', 'chicken broth', 'salt', 'pepper']),
   new Label('Black Beans', ['black beans', 'onion powder', 'garlic powder', 'salt', 'pepper']),
-  new Label('Chicken - Italian Marinade)', ['chicken', 'olive oil', 'balsamic vinegar', 'parmesan cheese', 'romano cheese'])
+  new Label('Chicken - Italian Marinade', ['chicken', 'olive oil', 'balsamic vinegar', 'parmesan cheese', 'romano cheese'])
 ] as Label[])
 
 const filteredLabels = computed(() => {
